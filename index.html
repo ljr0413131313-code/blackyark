@@ -652,7 +652,7 @@
             <i class="fa-solid fa-mountain"></i>
           </div>
           <div>
-            <h1 class="app-title">블랙야크 100대 명산 안내</h1>
+            <h1 class="app-title">명산 100 스마트 맵</h1>
             <p class="app-subtitle">블랙야크 100대 명산 완등 챌린지</p>
           </div>
         </div>
@@ -674,20 +674,6 @@
           <div class="filter-badge" data-region="전라">전라</div>
           <div class="filter-badge" data-region="경상">경상/울산</div>
           <div class="filter-badge" data-region="제주">제주</div>
-        </div>
-
-        <!-- Toggles (National Parks, Climbed status) -->
-        <div class="toggle-filters">
-          <label class="checkbox-label">
-            <input type="checkbox" id="filter-national-park">
-            <span class="custom-checkbox"></span>
-            <span>국립공원만 보기</span>
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" id="filter-unclimbed">
-            <span class="custom-checkbox"></span>
-            <span>미완등 산만 보기</span>
-          </label>
         </div>
 
         <!-- Advanced Course Filters Toggle -->
@@ -726,17 +712,8 @@
               <span>무료 입장</span>
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" id="filter-no-reserve">
-              <span>예약 불필요</span>
-            </label>
-            <label class="checkbox-label">
               <input type="checkbox" id="filter-has-toilet">
               <span>화장실 있음</span>
-            </label>
-            <label class="checkbox-label"
-              style="grid-column: span 2; padding-top: 4px; border-top: 1px dashed #e2e8f0; width: 100%;">
-              <input type="checkbox" id="filter-has-course">
-              <span style="font-weight: 700; color: var(--primary);">코스 등록된 산만 보기</span>
             </label>
           </div>
         </div>
@@ -5471,8 +5448,8 @@
 
       function getFilteredMountains() {
         const query = $("search-input").value.trim().toLowerCase();
-        const onlyUnclimbed = $("filter-unclimbed").checked;
-        const onlyNational = $("filter-national-park").checked;
+        const onlyUnclimbed = false;
+        const onlyNational = false;
 
         const filterDiff = $("filter-difficulty")?.value || "all";
         const filterDist5 = $("filter-dist-5")?.checked || false;
@@ -5661,30 +5638,31 @@
       }
 
       function bindEvents() {
-        $("search-input").addEventListener("input", renderList);
-        $("filter-unclimbed").addEventListener("change", renderList);
-        $("filter-national-park").addEventListener("change", renderList);
+        $("search-input")?.addEventListener("input", renderList);
+
+
 
         // Advanced course filters
-        $("btn-toggle-adv-filters").addEventListener("click", () => {
+        $("btn-toggle-adv-filters")?.addEventListener("click", () => {
           const panel = $("adv-filter-panel");
           const btn = $("btn-toggle-adv-filters");
+          if (!panel || !btn) return;
           const isHidden = panel.classList.toggle("hidden");
           btn.innerHTML = isHidden
             ? `<i class="fa-solid fa-sliders"></i> 상세 코스 필터 열기`
             : `<i class="fa-solid fa-sliders"></i> 상세 코스 필터 닫기`;
         });
 
-        $("filter-difficulty").addEventListener("change", renderList);
-        $("filter-dist-5").addEventListener("change", renderList);
-        $("filter-dist-10").addEventListener("change", renderList);
-        $("filter-free-parking").addEventListener("change", renderList);
-        $("filter-free-entrance").addEventListener("change", renderList);
-        $("filter-no-reserve").addEventListener("change", renderList);
-        $("filter-has-toilet").addEventListener("change", renderList);
-        $("filter-has-course").addEventListener("change", renderList);
+        $("filter-difficulty")?.addEventListener("change", renderList);
+        $("filter-dist-5")?.addEventListener("change", renderList);
+        $("filter-dist-10")?.addEventListener("change", renderList);
+        $("filter-free-parking")?.addEventListener("change", renderList);
+        $("filter-free-entrance")?.addEventListener("change", renderList);
 
-        $("region-filters").addEventListener("click", e => {
+        $("filter-has-toilet")?.addEventListener("change", renderList);
+
+
+        $("region-filters")?.addEventListener("click", e => {
           const badge = e.target.closest(".filter-badge");
           if (!badge) return;
           document.querySelectorAll(".filter-badge").forEach(el => el.classList.remove("active"));
@@ -5693,8 +5671,8 @@
           renderList();
         });
 
-        $("sidebar-toggle").addEventListener("click", () => {
-          $("sidebar").classList.toggle("open");
+        $("sidebar-toggle")?.addEventListener("click", () => {
+          $("sidebar")?.classList.toggle("open");
           setTimeout(() => map.invalidateSize(), 260);
         });
 
@@ -5703,6 +5681,7 @@
 
       function patchRegionFilters() {
         const box = $("region-filters");
+        if (!box) return;
         box.innerHTML = `
         <div class="filter-badge active" data-region="all">전체</div>
         <div class="filter-badge" data-region="강원">강원</div>

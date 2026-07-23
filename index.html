@@ -686,11 +686,11 @@
           <div style="margin-bottom: 6px;">
             <select id="filter-difficulty" class="filter-select">
               <option value="all">모든 난이도</option>
-              <option value="1">난이도: 쉬움 (1단계)</option>
-              <option value="2">난이도: 보통 (2단계)</option>
-              <option value="3">난이도: 어려움 (3단계)</option>
-              <option value="4">난이도: 매우 어려움 (4단계)</option>
-              <option value="5">난이도: 전문가 수준 (5단계)</option>
+              <option value="1">난이도: 매우 쉬움 (1단계)</option>
+              <option value="2">난이도: 쉬움 (2단계)</option>
+              <option value="3">난이도: 보통 (3단계)</option>
+              <option value="4">난이도: 어려움 (4단계)</option>
+              <option value="5">난이도: 매우 어려움 (5단계)</option>
             </select>
           </div>
 
@@ -6326,14 +6326,41 @@
         return (groups[filter] || []).includes(region);
       }
 
-      function markerIcon(done) {
+      function getMountainDifficultyLevel(mountain) {
+        const level = Number(mountain?.shortestCourse?.difficultyLevel);
+        if (level >= 1 && level <= 5) return level;
+        const text = String(mountain?.shortestCourse?.difficulty || "").trim();
+        return ({
+          "매우 쉬움": 1,
+          "쉬움": 2,
+          "보통": 3,
+          "어려움": 4,
+          "매우 어려움": 5,
+          "전문가 수준": 5
+        })[text] || 3;
+      }
+
+      function getDifficultyColor(level) {
+        return ({
+          1: "#16a34a",  // 매우 쉬움: 초록색
+          2: "#eab308",  // 쉬움: 노란색
+          3: "#f97316",  // 보통: 주황색
+          4: "#dc2626",  // 어려움: 빨간색
+          5: "#111827"   // 매우 어려움: 검정색
+        })[level] || "#f97316";
+      }
+
+      function markerIcon(mountain) {
+        const level = getMountainDifficultyLevel(mountain);
+        const background = getDifficultyColor(level);
+        const iconColor = level === 2 ? "#111827" : "#ffffff";
         return L.divIcon({
           className: "",
           html: `<div style="
           width:28px;height:28px;border-radius:50% 50% 50% 0;
-          transform:rotate(-45deg);background:${done ? "#176b43" : "#ef7d22"};
+          transform:rotate(-45deg);background:${background};
           border:3px solid white;box-shadow:0 2px 7px rgba(0,0,0,.35)">
-          <span style="display:block;transform:rotate(45deg);color:white;text-align:center;line-height:21px;font-size:11px">
+          <span style="display:block;transform:rotate(45deg);color:${iconColor};text-align:center;line-height:21px;font-size:11px">
             <i class="fa-solid fa-mountain"></i>
           </span>
         </div>`,
@@ -6403,11 +6430,11 @@
       function getDifficultyText(level, text) {
         if (level) {
           const levels = {
-            1: "쉬움 (1단계)",
-            2: "보통 (2단계)",
-            3: "어려움 (3단계)",
-            4: "매우 어려움 (4단계)",
-            5: "전문가 수준 (5단계)"
+            1: "매우 쉬움 (1단계)",
+            2: "쉬움 (2단계)",
+            3: "보통 (3단계)",
+            4: "어려움 (4단계)",
+            5: "매우 어려움 (5단계)"
           };
           return levels[level] || text || "확인 필요";
         }
@@ -6415,7 +6442,7 @@
       }
 
       function getDifficultyBadge(level, text) {
-        const lv = level || (text === "쉬움" ? 1 : text === "보통" ? 2 : text === "어려움" ? 3 : text === "매우 어려움" ? 4 : text === "전문가 수준" ? 5 : null);
+        const lv = level || (text === "매우 쉬움" ? 1 : text === "쉬움" ? 2 : text === "보통" ? 3 : text === "어려움" ? 4 : (text === "매우 어려움" || text === "전문가 수준") ? 5 : null);
         const label = getDifficultyText(lv, text);
         const cls = lv ? `diff-level-${lv}` : 'diff-level-none';
         let stars = "";
@@ -6456,13 +6483,70 @@
       `;
       }
 
+      const SOUTH_KOREA_MAP_BOUNDS = L.latLngBounds(
+        [32.6, 124.0],
+        [39.1, 132.0]
+      );
+
+      function addMapDecorations() {
+        const legend = L.control({ position: "bottomleft" });
+        legend.onAdd = function () {
+          const div = L.DomUtil.create("div");
+          div.style.cssText = "background:rgba(255,255,255,.94);padding:8px 10px;border-radius:8px;box-shadow:0 1px 5px rgba(0,0,0,.25);font-size:11px;line-height:1.65;color:#334155";
+          div.innerHTML = `
+            <div style="font-weight:700;margin-bottom:2px">난이도별 정상 마커</div>
+            <div>🟢 매우 쉬움</div>
+            <div>🟡 쉬움</div>
+            <div>🟠 보통</div>
+            <div>🔴 어려움</div>
+            <div>⚫ 매우 어려움</div>`;
+          L.DomEvent.disableClickPropagation(div);
+          return div;
+        };
+        legend.addTo(map);
+
+        const creator = L.control({ position: "bottomright" });
+        creator.onAdd = function () {
+          const div = L.DomUtil.create("div");
+          div.style.cssText = "background:rgba(255,255,255,.92);padding:5px 9px;border-radius:7px;box-shadow:0 1px 4px rgba(0,0,0,.2);font-size:11px;font-weight:700;color:#334155;margin-bottom:22px";
+          div.textContent = "만든사람 정드래곤";
+          L.DomEvent.disableClickPropagation(div);
+          return div;
+        };
+        creator.addTo(map);
+      }
+
+      function fitAllMountains() {
+        const points = certificationSites
+          .filter(site => Number.isFinite(Number(site.lat)) && Number.isFinite(Number(site.lng)))
+          .map(site => [Number(site.lat), Number(site.lng)]);
+        if (!points.length) {
+          map.setView([36.15, 127.8], 7, { animate: false });
+          return;
+        }
+        map.fitBounds(L.latLngBounds(points), {
+          padding: [28, 28],
+          maxZoom: 7,
+          animate: false
+        });
+      }
+
       function initMap() {
-        map = L.map("map", { preferCanvas: true }).setView([36.35, 127.85], 7);
+        map = L.map("map", {
+          preferCanvas: true,
+          minZoom: 6,
+          maxBounds: SOUTH_KOREA_MAP_BOUNDS,
+          maxBoundsViscosity: 1.0,
+          worldCopyJump: false
+        });
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
+          noWrap: true,
+          bounds: SOUTH_KOREA_MAP_BOUNDS,
           attribution: "&copy; OpenStreetMap contributors"
         }).addTo(map);
         markerLayer = L.layerGroup().addTo(map);
+        addMapDecorations();
       }
 
       function createMarkers() {
@@ -6470,7 +6554,7 @@
           const markerMountain = mountains.find(m => Number(m.id) === Number(site.mountain_id));
           const markerDisplayName = getDisplayName(markerMountain, site.height_m);
           const marker = L.marker([site.lat, site.lng], {
-            icon: markerIcon(completed.has(site.peak_id)),
+            icon: markerIcon(markerMountain),
             title: `${markerDisplayName} ${site.certification_site}`
           }).bindPopup(() => popupHtml(site), {
             autoPan: false,
@@ -6483,6 +6567,8 @@
         });
 
         mountains.forEach(m => {
+          // 설악산 최단코스 출발지 마커와 연결선은 지도에 표시하지 않는다.
+          if (getDisplayName(m) === "설악산") return;
           if (m.shortestCourse && m.shortestCourse.startLat && m.shortestCourse.startLng) {
             const sc = m.shortestCourse;
             const sites = getMountainSites(m.id);
@@ -6528,7 +6614,8 @@
           if (visibleIds.has(site.mountain_id)) {
             const marker = markerByPeakId.get(site.peak_id);
             if (marker) {
-              marker.setIcon(markerIcon(completed.has(site.peak_id)));
+              const markerMountain = mountains.find(m => Number(m.id) === Number(site.mountain_id));
+              marker.setIcon(markerIcon(markerMountain));
               markerLayer.addLayer(marker);
             }
           }
@@ -6721,7 +6808,11 @@
         updateStats();
         renderList();
         const marker = markerByPeakId.get(peakId);
-        if (marker) marker.setIcon(markerIcon(checked));
+        if (marker) {
+          const site = certificationSites.find(s => s.peak_id === peakId);
+          const mountain = mountains.find(m => Number(m.id) === Number(site?.mountain_id));
+          marker.setIcon(markerIcon(mountain));
+        }
       }
 
       function moveToSite(peakId) {
@@ -6832,7 +6923,10 @@
         bindEvents();
         updateStats();
         renderList();
-        setTimeout(() => map.invalidateSize(), 150);
+        setTimeout(() => {
+          map.invalidateSize();
+          fitAllMountains();
+        }, 150);
       }
 
       if (document.readyState === "loading") {

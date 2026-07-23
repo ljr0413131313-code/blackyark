@@ -352,6 +352,17 @@
       margin-top: 9px;
     }
 
+    /* 지도 높이가 낮아도 정보창 내용이 잘리지 않도록 내부만 부드럽게 스크롤 */
+    .leaflet-popup-content-wrapper {
+      max-width: calc(100vw - 36px);
+    }
+
+    .leaflet-popup-scrolled {
+      border-bottom: 0;
+      border-top: 0;
+      padding-right: 6px;
+    }
+
     .popup-links a {
       text-decoration: none;
       padding: 6px 8px;
@@ -6557,9 +6568,13 @@
             icon: markerIcon(markerMountain),
             title: `${markerDisplayName} ${site.certification_site}`
           }).bindPopup(() => popupHtml(site), {
-            autoPan: false,
-            keepInView: false,
-            maxWidth: 340
+            // 정보창이 지도 밖으로 잘리지 않도록 Leaflet이 필요한 거리만큼만 자동 이동한다.
+            autoPan: true,
+            keepInView: true,
+            autoPanPaddingTopLeft: [18, 18],
+            autoPanPaddingBottomRight: [18, 18],
+            maxWidth: 340,
+            maxHeight: Math.max(220, Math.min(430, map.getSize().y - 72))
           });
 
           marker.on("click", () => focusMountainCard(site.mountain_id));
@@ -6578,7 +6593,14 @@
               const startMarker = L.marker([sc.startLat, sc.startLng], {
                 icon: startMarkerIcon(),
                 title: `${getDisplayName(m)} 최단코스 출발지 (${sc.startName})`
-              }).bindPopup(() => startPopupHtml(m));
+              }).bindPopup(() => startPopupHtml(m), {
+                autoPan: true,
+                keepInView: true,
+                autoPanPaddingTopLeft: [18, 18],
+                autoPanPaddingBottomRight: [18, 18],
+                maxWidth: 340,
+                maxHeight: Math.max(220, Math.min(430, map.getSize().y - 72))
+              });
 
               startMarker.on("click", () => focusMountainCard(m.id));
               startMarkerByMountainId.set(m.id, startMarker);
@@ -6824,11 +6846,10 @@
         const target = L.latLng(site.lat, site.lng);
         map.closePopup();
 
-        // 목록에서 산을 선택하면 해당 정상 마커가 메인 지도 정중앙에 오도록 이동한다.
-        // 팝업의 자동 화면 이동(autoPan)은 비활성화해 마커가 모서리로 밀리지 않게 한다.
+        // 목록에서 산을 선택하면 먼저 정상 마커를 지도 중앙으로 옮긴다.
+        // 정보창은 열린 뒤 화면 경계를 넘는 부분만큼만 최소한으로 자동 보정된다.
         map.setView(target, 14, { animate: true });
         map.once("moveend", () => {
-          map.panTo(target, { animate: false });
           marker.openPopup();
         });
 

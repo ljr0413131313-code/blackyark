@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>블랙야크 100대 명산 스마트 지도</title>
+  <title>블랙야크 100대 명산 스마트 지도 · 최종 검토본</title>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -694,22 +694,31 @@
             </select>
           </div>
 
+          <div style="margin-bottom: 8px;">
+            <select id="filter-distance-range" class="filter-select">
+              <option value="all">모든 왕복 거리</option>
+              <option value="0-5">왕복 5km 이하</option>
+              <option value="5-10">왕복 5km 초과 ~ 10km 이하</option>
+              <option value="10-15">왕복 10km 초과 ~ 15km 이하</option>
+              <option value="15-20">왕복 15km 초과 ~ 20km 이하</option>
+            </select>
+          </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px;">
-            <label class="checkbox-label">
-              <input type="checkbox" id="filter-dist-5">
-              <span>왕복 5km 이하</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="filter-dist-10">
-              <span>왕복 10km 이하</span>
-            </label>
             <label class="checkbox-label">
               <input type="checkbox" id="filter-free-parking">
               <span>무료 주차</span>
             </label>
             <label class="checkbox-label">
+              <input type="checkbox" id="filter-paid-parking">
+              <span>유료 주차</span>
+            </label>
+            <label class="checkbox-label">
               <input type="checkbox" id="filter-free-entrance">
               <span>무료 입장</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="filter-paid-entrance">
+              <span>유료 입장</span>
             </label>
           </div>
         </div>
@@ -2003,7 +2012,7 @@
       {
         "id": 39,
         "region": "충청남도",
-        "name": "가야산",
+        "name": "가야산(예산)",
         "height": 678,
         "climbed": false,
         "certification_sites": [
@@ -2018,18 +2027,19 @@
         "shortestCourse": {
           "difficulty": "매우 쉬움",
           "difficultyLevel": 1,
-          "startName": "상가리 주차장·남연군묘",
-          "distanceRoundTripKm": 5.5,
-          "distanceOneWayKm": 2.75,
+          "startName": "대전방송서산TV중계소",
+          "distanceRoundTripKm": 0.6,
+          "distanceOneWayKm": 0.3,
+          "estimatedTimeRoundTrip": "10분 ~ 20분",
           "certificationSite": "정상",
           "sourceName": "사용자 제공 공개 산행기록 정리",
           "lastVerified": "2026-07-17",
           "parking": {
-            "name": "상가리 주차장·남연군묘",
-            "fee": "무료 또는 유료(주차장별 현장 요금 확인)"
+            "name": "대전방송서산TV중계소",
+            "fee": "무료"
           },
-          "entranceFee": "등산로 입장 무료(케이블카·휴양림·주차·기타 시설 이용료 별도)",
-          "feeNote": "요금은 운영기관 정책·차종·성수기·시설 이용 여부에 따라 달라질 수 있음"
+          "entranceFee": "무료",
+          "feeNote": "도로 차단 여부를 출발 전 확인"
         }
       },
       {
@@ -4037,7 +4047,7 @@
   "가야산(예산)": {
     "number": 3,
     "height": "678 m",
-    "note": "없음",
+    "note": "도로 차단될 수 있음",
     "entranceFee": "무료",
     "parkingFee": "무료",
     "estimatedTime": "10분 ~ 20분",
@@ -4161,7 +4171,7 @@
     "entranceFee": "무료",
     "parkingFee": "1500",
     "estimatedTime": "2시간 ~ 3시간",
-    "shortestStart": "금오산공영소주차장",
+    "shortestStart": "금오산 제1주차장",
     "shortestDistance": "6.9km"
   },
   "금정산": {
@@ -5482,7 +5492,7 @@
         "mountain_id": 39,
         "peak_id": "39-1",
         "region": "충청남도",
-        "mountain_name": "가야산",
+        "mountain_name": "가야산(예산)",
         "certification_site": "정상",
         "height_m": 678,
         "lat": 36.7066013,
@@ -6228,8 +6238,60 @@
         "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
       })[ch]);
 
-      function getExtraInfo(mountainName) {
-        return mountainExtraInfo[mountainName] || null;
+      function formatFee(value) {
+        const text = String(value ?? "").trim();
+        if (!text) return "정보 확인 중";
+        if (text === "무료") return "무료";
+        return text.replace(/(?<![\d,])(\d{4,})(?![\d,]*\s*(?:m|km|분|시간|년|월|일))/g, (match) => {
+          const numeric = Number(match.replace(/,/g, ""));
+          return Number.isFinite(numeric) ? `${numeric.toLocaleString("ko-KR")}원` : match;
+        }).replace(/원원/g, "원");
+      }
+
+      function formatHeight(value) {
+        const match = String(value ?? "").match(/([\d,]+(?:\.\d+)?)\s*m?/i);
+        if (!match) return "정보 확인 중";
+        const numeric = Number(match[1].replace(/,/g, ""));
+        return Number.isFinite(numeric) ? `${numeric.toLocaleString("ko-KR")}m` : String(value);
+      }
+
+      function isForestRecreationStart(value) {
+        return /휴양림/.test(String(value ?? ""));
+      }
+
+      function forestFeeNotice(value) {
+        return isForestRecreationStart(value)
+          ? `<div style="grid-column:span 2;margin-top:-4px;padding:8px 10px;border-radius:8px;background:#f8fafc;color:#64748b;font-size:12px;line-height:1.5;"><i class="fa-solid fa-circle-info" style="margin-right:5px"></i>계절·휴양림 운영정책에 따라 입장료 및 주차요금이 변동될 수 있습니다.</div>`
+          : "";
+      }
+
+      function getExtraEntry(mountainOrName, heightValue) {
+        const name = typeof mountainOrName === "object" ? mountainOrName?.name : mountainOrName;
+        const height = Number(typeof mountainOrName === "object" ? mountainOrName?.height : heightValue);
+        if (name && mountainExtraInfo[name]) return [name, mountainExtraInfo[name]];
+        const entries = Object.entries(mountainExtraInfo);
+        const heightMatches = entries.filter(([, info]) => Number(String(info.height).replace(/[^0-9.]/g, "")) === height);
+        if (heightMatches.length === 1) return heightMatches[0];
+        const normalized = String(name || "").replace(/\s+/g, "");
+        const candidate = heightMatches.find(([key]) => key.replace(/\([^)]*\)/g, "").replace(/\s+/g, "").startsWith(normalized));
+        return candidate || null;
+      }
+
+      function getExtraInfo(mountainOrName, heightValue) {
+        return getExtraEntry(mountainOrName, heightValue)?.[1] || null;
+      }
+
+      function getDisplayName(mountainOrName, heightValue) {
+        return getExtraEntry(mountainOrName, heightValue)?.[0] || (typeof mountainOrName === "object" ? mountainOrName?.name : mountainOrName) || "";
+      }
+
+      // 카카오맵 출발지 검색에서는 산 이름 뒤 괄호 표기를 제거한다.
+      // 예: 가야산(예산) → 가야산, 감악산(원주) → 감악산
+      function getKakaoSearchMountainName(mountainOrName, heightValue) {
+        return getDisplayName(mountainOrName, heightValue)
+          .replace(/\s*\([^)]*\)/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
       }
 
       function saveCompleted() {
@@ -6284,12 +6346,17 @@
       function popupHtml(site) {
         const mountain = mountains.find(m => Number(m.id) === Number(site.mountain_id));
         const course = mountain?.shortestCourse || {};
-        const info = getExtraInfo(mountain?.name);
+        const info = getExtraInfo(mountain);
+        const displayName = getDisplayName(mountain);
         const summitKakao = `https://map.kakao.com/link/map/${encodeURIComponent(
-          site.mountain_name + " " + site.certification_site
+          displayName + " " + site.certification_site
         )},${site.lat},${site.lng}`;
-        const startQuery = `${site.mountain_name} ${course.startName || ""}`.trim();
+        const shortestStart = info?.shortestStart || course.startName || "정보 확인 중";
+        const startQuery = `${getKakaoSearchMountainName(mountain)} ${shortestStart}`.trim();
         const startKakao = `https://map.kakao.com/link/search/${encodeURIComponent(startQuery)}`;
+        const recreationNotice = isForestRecreationStart(shortestStart)
+          ? `<div style="margin:5px 0 7px;padding:7px 9px;border-radius:7px;background:#f8fafc;color:#64748b;font-size:11px;line-height:1.45;"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>계절·휴양림 운영정책에 따라 입장료 및 주차요금이 변동될 수 있습니다.</div>`
+          : "";
 
         let distanceText = "정보 확인 중";
         if (course.distanceRoundTripKm != null) {
@@ -6298,16 +6365,17 @@
 
         return `
         <div style="min-width:250px;line-height:1.55;">
-          <div class="popup-title">${esc(site.mountain_name)}</div>
+          <div class="popup-title">${esc(displayName)}</div>
           <div class="popup-line"><b>인증장소:</b> ${esc(site.certification_site)}</div>
-          <div class="popup-line"><b>해발:</b> ${esc(info?.height || `${site.height_m}m`)}</div>
-          <div class="popup-line"><b>비고:</b> ${esc(info?.note || "없음")}</div>
-          <div class="popup-line"><b>입장료:</b> ${esc(info?.entranceFee || course.entranceFee || "정보 확인 중")}</div>
-          <div class="popup-line"><b>주차비:</b> ${esc(info?.parkingFee || course.parking?.fee || "정보 확인 중")}</div>
-          <div class="popup-line"><b>예상시간:</b> ${esc(info?.estimatedTime || course.estimatedTimeRoundTrip || "정보 확인 중")}</div>
-          <div class="popup-line"><b>최단코스 장소:</b> ${esc(info?.shortestStart || course.startName || "정보 확인 중")}</div>
-          <div class="popup-line"><b>최단거리:</b> ${esc(info?.shortestDistance || distanceText)}</div>
+          <div class="popup-line"><b>해발:</b> ${esc(formatHeight(info?.height || site.height_m))}</div>
           <div class="popup-line"><b>난이도:</b> ${esc(course.difficulty || "정보 확인 중")}</div>
+          <div class="popup-line"><b>예상시간:</b> ${esc(info?.estimatedTime || course.estimatedTimeRoundTrip || "정보 확인 중")}</div>
+          <div class="popup-line"><b>최단거리:</b> ${esc(info?.shortestDistance || distanceText)}</div>
+          <div class="popup-line"><b>최단코스 장소:</b> ${esc(shortestStart)}</div>
+          ${recreationNotice}
+          <div class="popup-line"><b>입장료:</b> ${esc(formatFee(info?.entranceFee || course.entranceFee))}</div>
+          <div class="popup-line"><b>주차비:</b> ${esc(formatFee(info?.parkingFee || course.parking?.fee))}</div>
+          <div class="popup-line"><b>비고:</b> ${esc(formatFee(info?.note || "없음"))}</div>
           <div class="popup-links" style="flex-wrap:wrap">
             <a href="${summitKakao}" target="_blank" rel="noopener">정상 카카오맵</a>
             <a href="${startKakao}" target="_blank" rel="noopener" style="background:#2563eb">최단코스 출발지 카카오맵</a>
@@ -6359,22 +6427,28 @@
 
       function startPopupHtml(m) {
         const sc = m.shortestCourse;
+        const info = getExtraInfo(m);
+        const shortestStart = info?.shortestStart || sc.startName || "확인 필요";
         const diffBadge = getDifficultyBadge(sc.difficultyLevel, sc.difficulty);
-        const distStr = sc.distanceRoundTripKm ? `${sc.distanceRoundTripKm}km (왕복)` : "확인 필요";
-        const timeStr = sc.estimatedTimeRoundTrip || "확인 필요";
-        const parkingStr = sc.parking && sc.parking.name ? sc.parking.name : "확인 필요";
+        const distStr = info?.shortestDistance || (sc.distanceRoundTripKm ? `${sc.distanceRoundTripKm}km (왕복)` : "확인 필요");
+        const timeStr = info?.estimatedTime || sc.estimatedTimeRoundTrip || "확인 필요";
+        const parkingStr = formatFee(info?.parkingFee || (sc.parking && sc.parking.fee) || (sc.parking && sc.parking.name) || "확인 필요");
+        const recreationNotice = isForestRecreationStart(shortestStart)
+          ? `<div style="margin:5px 0 7px;padding:7px 9px;border-radius:7px;background:#f8fafc;color:#64748b;font-size:11px;line-height:1.45;"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>계절·휴양림 운영정책에 따라 입장료 및 주차요금이 변동될 수 있습니다.</div>`
+          : "";
 
         return `
         <div style="font-size:12px; line-height: 1.5; min-width: 200px;">
           <div class="popup-title" style="color:#2563eb; margin-bottom: 8px;">
-            <i class="fa-solid fa-flag"></i> ${esc(m.name)} 최단코스 출발지
+            <i class="fa-solid fa-flag"></i> ${esc(getDisplayName(m))} 최단코스 출발지
           </div>
-          <div class="popup-line"><b>출발지명:</b> ${esc(sc.startName)}</div>
-          <div class="popup-line"><b>코스명:</b> ${esc(sc.startName)} ~ ${esc(sc.certificationSite)} 코스</div>
-          <div class="popup-line"><b>왕복 거리:</b> ${distStr}</div>
-          <div class="popup-line"><b>소요 시간:</b> ${timeStr}</div>
+          <div class="popup-line"><b>출발지명:</b> ${esc(shortestStart)}</div>
+          ${recreationNotice}
+          <div class="popup-line"><b>코스명:</b> ${esc(shortestStart)} ~ ${esc(sc.certificationSite)} 코스</div>
+          <div class="popup-line"><b>왕복 거리:</b> ${esc(distStr)}</div>
+          <div class="popup-line"><b>소요 시간:</b> ${esc(timeStr)}</div>
           <div class="popup-line"><b>난이도:</b> ${diffBadge}</div>
-          <div class="popup-line"><b>주차 정보:</b> ${esc(parkingStr)}</div>
+          <div class="popup-line"><b>주차비:</b> ${esc(parkingStr)}</div>
           <div style="margin-top: 8px; font-size: 10.5px; color: #ef7d22; border-top: 1px dashed #ddd; padding-top: 6px; font-weight: bold;">
             <i class="fa-solid fa-triangle-exclamation"></i> 실제 등산로가 아닌 위치 연결선
           </div>
@@ -6393,10 +6467,16 @@
 
       function createMarkers() {
         certificationSites.forEach(site => {
+          const markerMountain = mountains.find(m => Number(m.id) === Number(site.mountain_id));
+          const markerDisplayName = getDisplayName(markerMountain, site.height_m);
           const marker = L.marker([site.lat, site.lng], {
             icon: markerIcon(completed.has(site.peak_id)),
-            title: `${site.mountain_name} ${site.certification_site}`
-          }).bindPopup(() => popupHtml(site));
+            title: `${markerDisplayName} ${site.certification_site}`
+          }).bindPopup(() => popupHtml(site), {
+            autoPan: false,
+            keepInView: false,
+            maxWidth: 340
+          });
 
           marker.on("click", () => focusMountainCard(site.mountain_id));
           markerByPeakId.set(site.peak_id, marker);
@@ -6411,7 +6491,7 @@
             if (matchedSite) {
               const startMarker = L.marker([sc.startLat, sc.startLng], {
                 icon: startMarkerIcon(),
-                title: `${m.name} 최단코스 출발지 (${sc.startName})`
+                title: `${getDisplayName(m)} 최단코스 출발지 (${sc.startName})`
               }).bindPopup(() => startPopupHtml(m));
 
               startMarker.on("click", () => focusMountainCard(m.id));
@@ -6425,7 +6505,7 @@
               }).bindPopup(`
               <div style="font-size:12px; line-height: 1.4; min-width: 180px;">
                 <b style="color: #2563eb;"><i class="fa-solid fa-route"></i> 최단코스 연결선</b><br>
-                <span style="color: var(--muted); font-size: 11px;">${esc(m.name)}: ${esc(sc.startName)} &rarr; ${esc(matchedSite.certification_site)}</span>
+                <span style="color: var(--muted); font-size: 11px;">${esc(getDisplayName(m))}: ${esc(sc.startName)} &rarr; ${esc(matchedSite.certification_site)}</span>
                 <div style="margin-top: 6px; border-top: 1px solid #eee; padding-top: 4px; font-weight: bold; color: #ef7d22;">
                   <i class="fa-solid fa-triangle-exclamation"></i> 실제 등산로가 아닌 위치 연결선
                 </div>
@@ -6470,10 +6550,11 @@
         const onlyNational = false;
 
         const filterDiff = $("filter-difficulty")?.value || "all";
-        const filterDist5 = $("filter-dist-5")?.checked || false;
-        const filterDist10 = $("filter-dist-10")?.checked || false;
+        const filterDistanceRange = $("filter-distance-range")?.value || "all";
         const filterFreeParking = $("filter-free-parking")?.checked || false;
+        const filterPaidParking = $("filter-paid-parking")?.checked || false;
         const filterFreeEntrance = $("filter-free-entrance")?.checked || false;
+        const filterPaidEntrance = $("filter-paid-entrance")?.checked || false;
         const filterNoReserve = $("filter-no-reserve")?.checked || false;
         const filterHasCourse = $("filter-has-course")?.checked || false;
 
@@ -6525,23 +6606,34 @@
             }
 
             // Distance filters
-            if (filterDist5) {
-              if (sc.distanceRoundTripKm === null || sc.distanceRoundTripKm > 5) return false;
-            }
-            if (filterDist10) {
-              if (sc.distanceRoundTripKm === null || sc.distanceRoundTripKm > 10) return false;
+            if (filterDistanceRange !== "all") {
+              const distance = Number(String(getExtraInfo(m)?.shortestDistance || sc.distanceRoundTripKm || "").replace(/[^0-9.]/g, ""));
+              if (!Number.isFinite(distance)) return false;
+              const inRange = {
+                "0-5": distance <= 5,
+                "5-10": distance > 5 && distance <= 10,
+                "10-15": distance > 10 && distance <= 15,
+                "15-20": distance > 15 && distance <= 20
+              }[filterDistanceRange];
+              if (!inRange) return false;
             }
 
-            // Free parking filter
-            if (filterFreeParking) {
-              const parkingFee = getExtraInfo(m.name)?.parkingFee || sc.parking?.fee || "";
-              if (!parkingFee.includes("무료")) return false;
+            // Parking fee filters: when both are selected, show both categories.
+            if (filterFreeParking || filterPaidParking) {
+              const fee = String(getExtraInfo(m)?.parkingFee || sc.parking?.fee || "").trim();
+              const isFree = fee === "무료" || fee.startsWith("무료(") || fee.startsWith("무료 ");
+              const isPaid = !isFree && fee !== "";
+              if (filterFreeParking && !filterPaidParking && !isFree) return false;
+              if (filterPaidParking && !filterFreeParking && !isPaid) return false;
             }
 
-            // Free entrance filter
-            if (filterFreeEntrance) {
-              const fee = getExtraInfo(m.name)?.entranceFee || sc.entranceFee || "";
-              if (!fee.includes("무료")) return false;
+            // Entrance fee filters: when both are selected, show both categories.
+            if (filterFreeEntrance || filterPaidEntrance) {
+              const fee = String(getExtraInfo(m)?.entranceFee || sc.entranceFee || "").trim();
+              const isFree = fee === "무료" || fee.startsWith("무료(") || fee.startsWith("무료 ");
+              const isPaid = !isFree && fee !== "";
+              if (filterFreeEntrance && !filterPaidEntrance && !isFree) return false;
+              if (filterPaidEntrance && !filterFreeEntrance && !isPaid) return false;
             }
 
             // No reservation filter
@@ -6550,12 +6642,12 @@
             }
           } else {
             // If no course registered, hide if any course filter is active
-            const anyCourseFilterActive = (filterDiff !== "all") || filterDist5 || filterDist10 || filterFreeParking || filterFreeEntrance || filterNoReserve;
+            const anyCourseFilterActive = (filterDiff !== "all") || filterDistanceRange !== "all" || filterFreeParking || filterPaidParking || filterFreeEntrance || filterPaidEntrance || filterNoReserve;
             if (anyCourseFilterActive) return false;
           }
 
           return true;
-        }).sort((a, b) => a.name.localeCompare(b.name, "ko-KR"));
+        }).sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b), "ko-KR"));
       }
 
       function renderList() {
@@ -6571,12 +6663,15 @@
         list.innerHTML = filtered.map((m, index) => {
           const sites = getMountainSites(m.id);
           const sc = m.shortestCourse || {};
-          const info = getExtraInfo(m.name);
+          const info = getExtraInfo(m);
+          const displayName = getDisplayName(m);
           const summit = sites[0];
-          const startQuery = `${m.name} ${info?.shortestStart || sc.startName || ""}`.trim();
+          const shortestStart = info?.shortestStart || sc.startName || "정보 확인 중";
+          const startQuery = `${getKakaoSearchMountainName(m)} ${shortestStart}`.trim();
           const startKakao = `https://map.kakao.com/link/search/${encodeURIComponent(startQuery)}`;
+          const recreationNotice = forestFeeNotice(shortestStart);
           const summitKakao = summit
-            ? `https://map.kakao.com/link/map/${encodeURIComponent(m.name + " " + summit.certification_site)},${summit.lat},${summit.lng}`
+            ? `https://map.kakao.com/link/map/${encodeURIComponent(displayName + " " + summit.certification_site)},${summit.lat},${summit.lng}`
             : "#";
           const distance = sc.distanceRoundTripKm != null
             ? `왕복 약 ${sc.distanceRoundTripKm}km / 편도 약 ${sc.distanceOneWayKm ?? (sc.distanceRoundTripKm / 2)}km`
@@ -6586,20 +6681,21 @@
           <div class="mountain-card" data-mountain-id="${m.id}">
             <div class="mountain-head" data-peak-id="${summit?.peak_id || ""}">
               <div>
-                <div class="mountain-title">${index + 1}. ${esc(m.name)}</div>
-                <div class="mountain-meta">${esc(m.region)} · ${m.height}m · 인증지 ${sites.length}개</div>
+                <div class="mountain-title">${info?.number || index + 1}. ${esc(displayName)}</div>
+                <div class="mountain-meta">${esc(m.region)} · ${esc(formatHeight(info?.height || m.height))} · 인증지 ${sites.length}개</div>
               </div>
             </div>
             <div class="course-section">
               <div class="summary-grid">
-                <div class="summary-item"><i class="fa-solid fa-mountain"></i><span><b>해발:</b> ${esc(info?.height || `${m.height} m`)}</span></div>
-                <div class="summary-item"><i class="fa-solid fa-note-sticky"></i><span><b>비고:</b> ${esc(info?.note || "없음")}</span></div>
-                <div class="summary-item"><i class="fa-solid fa-ticket"></i><span><b>입장료:</b> ${esc(info?.entranceFee || sc.entranceFee || "정보 확인 중")}</span></div>
-                <div class="summary-item"><i class="fa-solid fa-square-parking"></i><span><b>주차비:</b> ${esc(info?.parkingFee || sc.parking?.fee || "정보 확인 중")}</span></div>
+                <div class="summary-item"><i class="fa-solid fa-mountain"></i><span><b>해발:</b> ${esc(formatHeight(info?.height || m.height))}</span></div>
+                <div class="summary-item"><i class="fa-solid fa-gauge-high"></i><span><b>난이도:</b> ${esc(sc.difficulty || "정보 확인 중")}</span></div>
                 <div class="summary-item" style="grid-column:span 2"><i class="fa-solid fa-clock"></i><span><b>예상시간:</b> ${esc(info?.estimatedTime || sc.estimatedTimeRoundTrip || "정보 확인 중")}</span></div>
-                <div class="summary-item" style="grid-column:span 2"><i class="fa-solid fa-location-dot"></i><span><b>최단코스 장소:</b> ${esc(info?.shortestStart || sc.startName || "정보 확인 중")}</span></div>
                 <div class="summary-item" style="grid-column:span 2"><i class="fa-solid fa-route"></i><span><b>최단거리:</b> ${esc(info?.shortestDistance || distance)}</span></div>
-                <div class="summary-item" style="grid-column:span 2"><i class="fa-solid fa-gauge-high"></i><span><b>난이도:</b> ${esc(sc.difficulty || "정보 확인 중")}</span></div>
+                <div class="summary-item" style="grid-column:span 2"><i class="fa-solid fa-location-dot"></i><span><b>최단코스 장소:</b> ${esc(shortestStart)}</span></div>
+                ${recreationNotice}
+                <div class="summary-item"><i class="fa-solid fa-ticket"></i><span><b>입장료:</b> ${esc(formatFee(info?.entranceFee || sc.entranceFee))}</span></div>
+                <div class="summary-item"><i class="fa-solid fa-square-parking"></i><span><b>주차비:</b> ${esc(formatFee(info?.parkingFee || sc.parking?.fee))}</span></div>
+                <div class="summary-item" style="grid-column:span 2"><i class="fa-solid fa-note-sticky"></i><span><b>비고:</b> ${esc(formatFee(info?.note || "없음"))}</span></div>
               </div>
               <div class="course-actions">
                 <a class="btn-action" href="${summitKakao}" target="_blank" rel="noopener"><i class="fa-solid fa-mountain"></i> 정상 카카오맵</a>
@@ -6633,8 +6729,18 @@
         if (!marker) return;
         const site = certificationSites.find(s => s.peak_id === peakId);
         if (!site) return;
-        map.setView([site.lat, site.lng], 14, { animate: true });
-        marker.openPopup();
+
+        const target = L.latLng(site.lat, site.lng);
+        map.closePopup();
+
+        // 목록에서 산을 선택하면 해당 정상 마커가 메인 지도 정중앙에 오도록 이동한다.
+        // 팝업의 자동 화면 이동(autoPan)은 비활성화해 마커가 모서리로 밀리지 않게 한다.
+        map.setView(target, 14, { animate: true });
+        map.once("moveend", () => {
+          map.panTo(target, { animate: false });
+          marker.openPopup();
+        });
+
         focusMountainCard(site.mountain_id);
         if (window.innerWidth <= 800) $("sidebar").classList.remove("open");
       }
@@ -6670,10 +6776,11 @@
         });
 
         $("filter-difficulty")?.addEventListener("change", renderList);
-        $("filter-dist-5")?.addEventListener("change", renderList);
-        $("filter-dist-10")?.addEventListener("change", renderList);
+        $("filter-distance-range")?.addEventListener("change", renderList);
         $("filter-free-parking")?.addEventListener("change", renderList);
+        $("filter-paid-parking")?.addEventListener("change", renderList);
         $("filter-free-entrance")?.addEventListener("change", renderList);
+        $("filter-paid-entrance")?.addEventListener("change", renderList);
 
 
 

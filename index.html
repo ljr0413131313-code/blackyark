@@ -4352,7 +4352,7 @@
     "entranceFee": "2000",
     "parkingFee": "무료",
     "estimatedTime": "1시간~2시간",
-    "shortestStart": "마니산국민관광지매표소",
+    "shortestStart": "마니산 매표소",
     "shortestDistance": "4.8km"
   },
   "마이산": {
@@ -6305,6 +6305,31 @@
           .trim();
       }
 
+      // 산별 카카오맵 최단코스 검색어 예외 설정
+      // 화면에 표시되는 산 이름·최단코스 장소와 별개로 검색 정확도를 높인다.
+      const kakaoStartSearchOverrides = {
+        "구봉산(진안)": "진안 구봉산 주차장",
+        "내변산(변산반도)": "내소탐방지원센터",
+        "도락산": "충북 단양군 대강면 광덕사길 193",
+        "두타산": "댓재휴게소",
+        "마니산(강화도)": "마니산 매표소",
+        "불갑산(영광)": "함평군 해보면 금계리 산37 노루목",
+        "용문산": "용천 스카이벨리",
+        "운장산": "동상 휴게소",
+        "응봉산": "울진군 북면 덕구리 산62-4",
+        "지리산 반야봉": "지리산 성삼재 휴게소",
+        "지리산 천왕봉": "지리산 중산리 탐방안내소",
+        "천마산": "천마산 시립공원 관리사무소",
+        "태백산": "태백시 태백사",
+        "화악산(가평)": "화학산 출입로"
+      };
+
+      function getKakaoStartSearchQuery(mountainOrName, shortestStart, heightValue) {
+        const displayName = getDisplayName(mountainOrName, heightValue);
+        return kakaoStartSearchOverrides[displayName]
+          || `${getKakaoSearchMountainName(mountainOrName, heightValue)} ${shortestStart || ""}`.trim();
+      }
+
       function saveCompleted() {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify([...completed]));
@@ -6390,7 +6415,7 @@
           displayName + " " + site.certification_site
         )},${site.lat},${site.lng}`;
         const shortestStart = info?.shortestStart || course.startName || "정보 확인 중";
-        const startQuery = `${getKakaoSearchMountainName(mountain)} ${shortestStart}`.trim();
+        const startQuery = getKakaoStartSearchQuery(mountain, shortestStart);
         const startKakao = `https://map.kakao.com/link/search/${encodeURIComponent(startQuery)}`;
         const recreationNotice = isForestRecreationStart(shortestStart)
           ? `<div style="margin:5px 0 7px;padding:7px 9px;border-radius:7px;background:#f8fafc;color:#64748b;font-size:11px;line-height:1.45;"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>계절·휴양림 운영정책에 따라 입장료 및 주차요금이 변동될 수 있습니다.</div>`
@@ -6776,7 +6801,7 @@
           const displayName = getDisplayName(m);
           const summit = sites[0];
           const shortestStart = info?.shortestStart || sc.startName || "정보 확인 중";
-          const startQuery = `${getKakaoSearchMountainName(m)} ${shortestStart}`.trim();
+          const startQuery = getKakaoStartSearchQuery(m, shortestStart);
           const startKakao = `https://map.kakao.com/link/search/${encodeURIComponent(startQuery)}`;
           const recreationNotice = forestFeeNotice(shortestStart);
           const summitKakao = summit
